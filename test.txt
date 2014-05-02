@@ -1,1 +1,2 @@
 this is my first git reposity.
+hello thomas,you are a good guy!
