@@ -1,3 +1,7 @@
 this is my first git reposity.
 hello thomas,you are a good guy!
-Creating a new branch is quick & simple.
+<<<<<<< HEAD
+Creating a new branch is quick and simple.
+=======
+Creating a new branch is quick and simple.
+>>>>>>> dev
