@@ -41,7 +41,7 @@ int main()
 	int err = -1;
 	socklen_t optlen;
 
-	char buf[8*1024];
+	char buf[1024];
 	struct sockaddr_in addrSrc;
 	memset((void*)&addrSrc, 0, sizeof(addrSrc));
 	addrSrc.sin_family = AF_INET;
@@ -118,12 +118,14 @@ int main()
 	printf("Waiting for message:\n");
 	int recvTotal = 0;
 	int recvNum = 0;
+	int packCnt = 0;
 	while(1)
 	{
 		recvNum = recvfrom(udpSocket, buf, sizeof(buf), 0, (struct sockaddr*)&addrSrc, &addrSrc_len);
 		if(recvTotal == 0)
 			gettimeofday(&start, 0);
 		recvTotal += recvNum;
+		packCnt++;
 		//printf("Received from client:%s\n", buf);
 		if(strncmp(buf, "stop", 4) == 0) // End Receive
 		{
@@ -133,12 +135,13 @@ int main()
 	}
 	gettimeofday(&stop, 0);
 	printf("Get %d bytes from udp client\n", recvTotal);
+	printf("Get %d packages\n", packCnt);
 	//timeSub(&diff, &start, &stop);
 	//printf("Use time: %dms\n", diff.tv_usec);
 	double timeUsed = 1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec); //microsecond
 	timeUsed /= 1000; //millisecond
 	printf("Use time: %.2lf ms\n", timeUsed);
-
+	
 	close(udpSocket);
 	return 0;
 }

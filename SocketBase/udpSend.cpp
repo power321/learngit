@@ -19,7 +19,7 @@ int main()
 	memset((void*)&addrDest, 0, sizeof(addrDest));
 	addrDest.sin_family = AF_INET;
 	addrDest.sin_port = htons(PORT);
-	addrDest.sin_addr.s_addr = inet_addr(IP_DEST);
+	addrDest.sin_addr.s_addr = inet_addr("202.115.161.162");
 
 	int udpSocket = socket(AF_INET, SOCK_DGRAM, 0);//IPv4 UDP
 	if(udpSocket < 0)
