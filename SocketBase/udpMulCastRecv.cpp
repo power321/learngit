@@ -8,28 +8,11 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-const int PORT = 9000;
+const int PORT = 9876;
 const char IP_DEST[10] = "127.0.0.1";
+#define CAST_ADDR "225.1.1.14"
+const int CAST_PORT = 12000;
 
-//Time Subtract
-/*
- * int timeSub(struct timeval *result, struct timeval *start, struct timeval *stop)
-{
-	int nsec;
-	if(x->tv_sec > y->tv_sec)
-		return -1;
-	if((x->tv_sec == y->tv_sec) && (x->tv_usec > y->tv_usec))
-		return -1;
-	result->tv_sec = (y->tv_sec - x->tv_sec);
-	result->tv_usec = (y->tv_usec - x->tv_usec);
-	if(result->tv_usec < 0)
-	{
-		result->tv_sec--;
-		result->tv_usec += 1000000;
-	}
-	return 0;
-}
-*/
 int main()
 {
 	//Time Test
@@ -41,11 +24,11 @@ int main()
 	int err = -1;
 	socklen_t optlen;
 
-	char buf[1024];
+	char buf[1500];
 	struct sockaddr_in addrSrc;
 	memset((void*)&addrSrc, 0, sizeof(addrSrc));
 	addrSrc.sin_family = AF_INET;
-	addrSrc.sin_port = htons(PORT);
+	addrSrc.sin_port = htons(CAST_PORT);
 	addrSrc.sin_addr.s_addr = htonl(INADDR_ANY);
 	//addrSrc.sin_addr.s_addr = inet_addr(IP_DEST);
 	socklen_t addrSrc_len = sizeof(addrSrc);
@@ -57,6 +40,7 @@ int main()
 		return -1;
 	}
 
+	/*
 	optlen = sizeof(rcv_size);
 	err = getsockopt(udpSocket, SOL_SOCKET, SO_RCVBUF, &rcv_size, &optlen);
 	if(err < 0)
@@ -108,6 +92,7 @@ int main()
 		return -1;
 	}
 	printf("System Socket Send Buff Size(My): %d Bytes\n", snd_size);
+	*/
 
 	int result = bind(udpSocket, (struct sockaddr*)&addrSrc, sizeof(addrSrc));
 	if(result < 0)
@@ -115,10 +100,21 @@ int main()
 		printf("Bind UDP Socket Error!\n");
 		return -1;
 	}
+	//加入广播组
+	struct ip_mreq mreq;
+	mreq.imr_multiaddr.s_addr = inet_addr(CAST_ADDR);
+	mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+	err = setsockopt(udpSocket, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+	if(err < 0)
+	{
+		printf("设置组播失败");
+		return -1;
+	}
 	printf("Waiting for message:\n");
 	int recvTotal = 0;
 	int recvNum = 0;
 	int packCnt = 0;
+	//sleep(2);
 	while(1)
 	{
 		recvNum = recvfrom(udpSocket, buf, sizeof(buf), 0, (struct sockaddr*)&addrSrc, &addrSrc_len);
@@ -126,19 +122,14 @@ int main()
 			gettimeofday(&start, 0);
 		recvTotal += recvNum;
 		packCnt++;
+		//printf("recv packcnt : %d\n",packCnt);
 		//printf("Received from client:%s\n", buf);
-		/*
-		if(strncmp(buf, "stop", 4) == 0) // End Receive
+		if(packCnt >= 100000) // End Receive
 		{
 			printf("Sender told me to end the connection!\n");
 			break;
 		}
-		*/
-		if(packCnt >= 16000)
-		{
-			printf("Sender told me to end the connection!\n");
-			break;
-		}
+		
 	}
 	gettimeofday(&stop, 0);
 	printf("Get %d bytes from udp client\n", recvTotal);
@@ -148,7 +139,7 @@ int main()
 	double timeUsed = 1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec); //microsecond
 	timeUsed /= 1000; //millisecond
 	printf("Use time: %.2lf ms\n", timeUsed);
-	
+	err = setsockopt(udpSocket, IPPROTO_IP, IP_DROP_MEMBERSHIP, &mreq, sizeof(mreq));
 	close(udpSocket);
 	return 0;
 }
